@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Fri Oct 25 14:51:45 2024
+
+@author: lenovo
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Sat Oct  7 15:04:32 2023
 
 @author: lenovo
@@ -10,7 +17,7 @@ import streamlit as st
 import pandas as pd
 from sklearn.cluster import DBSCAN
 
-#Title
+# Title
 st.title("Distance Based Clustering App")
 
 # User Guide
@@ -19,7 +26,7 @@ st.write(
     ## User Guide
 
     This app clusters latitude and longitude points from an Excel sheet based on user-defined distance, 
-    assigns cluster labels, and provides the output as a downloadable Excel sheet.
+    assigns cluster labels, and provides the output as a downloadable CSV file.
 
     ### Instructions:
     
@@ -50,28 +57,25 @@ if uploaded_file is not None:
     selected_distance = st.slider("Select Distance (in meters)", min_distance, max_distance, step)
 
     # Clustering
-    coords = data[['Latitude', 'Longitude']].values
+    coords = data[['Latitude', 'Longitude']].to_numpy()
     kms_per_radian = 6371.0
     epsilon = selected_distance / 1000 / kms_per_radian  # Convert to radians
 
+    # Apply DBSCAN clustering
     db = DBSCAN(eps=epsilon, min_samples=1, algorithm='ball_tree', metric='haversine').fit(
-        (coords * (3.14159265358979323846 / 180)).tolist()
+        (coords * (3.141592653589793 / 180))
     )
     cluster_labels = db.labels_
 
-    # Filter unique clusters
-    unique_clusters = set(cluster_labels)
-
-    # Assign cluster label -1 to noise complaints
-    noise_points = data[cluster_labels == -1]
+    # Assign cluster labels
     data['Cluster Label'] = cluster_labels
 
     # Display clusters in a table
     st.subheader("Clusters Table")
     st.write(data)
 
-    # Provide download link for Excel sheet
-    st.subheader("Download Clusters as Excel")
+    # Provide download link for CSV file
+    st.subheader("Download Clusters as CSV")
     csv = data.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()  # B64 encoding for download link
     href = f'<a href="data:file/csv;base64,{b64}" download="clustered_complaints.csv">Download CSV File</a>'
